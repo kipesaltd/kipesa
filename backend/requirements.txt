@@ -1,0 +1,15 @@
+fastapi[all]
+uvicorn[standard]
+asyncpg
+sqlalchemy[asyncio]
+supabase
+python-dotenv
+passlib[bcrypt]
+pyjwt
+pydantic
+slowapi
+aiocache
+alembic
+httpx
+loguru 
+pydantic-settings 
