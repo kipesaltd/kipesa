@@ -1,6 +1,6 @@
 from typing import Optional
-
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, field_serializer
 
 
 class ExpenseCreate(BaseModel):
@@ -52,7 +52,11 @@ class IncomeSourceResponse(BaseModel):
     amount: float
     frequency: Optional[str]
     description: Optional[str]
-    created_at: str
+    created_at: datetime
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value: datetime, _info):
+        return value.isoformat()
 
     model_config = {
         "extra": "forbid"

@@ -5,12 +5,29 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import (AsyncAttrs, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool
 
 settings = get_settings()
 
 DATABASE_URL = settings.DATABASE_URL
-engine = create_async_engine(DATABASE_URL, echo=True, future=True)
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+
+# Configure engine with valid connection pool settings
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=True,
+    future=True,
+    pool_pre_ping=True,  # Verify connections before use
+    pool_recycle=3600,   # Recycle connections after 1 hour
+    poolclass=NullPool if "supabase" in DATABASE_URL.lower() else None
+)
+
+# Configure session with proper settings
+AsyncSessionLocal = async_sessionmaker(
+    engine,
+    expire_on_commit=False,
+    autoflush=False,
+    autocommit=False
+)
 
 Base = declarative_base(cls=AsyncAttrs)
 
