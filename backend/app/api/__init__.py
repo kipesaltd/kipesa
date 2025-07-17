@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import auth, calculators, chatbot, content, finance
+from . import auth, calculators, chatbot, content, finance, health
 
 api_router = APIRouter()
 
@@ -11,3 +11,4 @@ api_router.include_router(
 )
 api_router.include_router(finance.router, prefix="/finance", tags=["finance"])
 api_router.include_router(content.router, prefix="/content", tags=["content"])
+api_router.include_router(health.router, prefix="/health", tags=["health"])
