@@ -14,3 +14,4 @@ async def process_heavy_calculation(data):
     logger.info(f"Processing heavy calculation for {data}")
     # await some_async_calculation(data)
     pass
+ 

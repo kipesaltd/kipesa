@@ -29,11 +29,23 @@ async def register_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login")
-async def login_user(user: UserLogin):
+async def login_user(user: UserLogin, db: AsyncSession = Depends(get_db)):
     """Login user and get access token. No authentication required."""
     auth_resp = auth_service.supabase_login(user.email, user.password)
     if not auth_resp:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Ensure user exists in database for development
+    existing_user = await auth_service.get_user_by_email(db, user.email)
+    if not existing_user:
+        # Create user in database for development
+        user_data = {
+            "email": user.email,
+            "password": user.password,
+            "full_name": user.email.split('@')[0]  # Use email prefix as name
+        }
+        await auth_service.create_user_supabase_and_local(db, user_data)
+    
     token = auth_service.create_access_token(
         {"sub": user.email},
         timedelta(minutes=auth_service.ACCESS_TOKEN_EXPIRE_MINUTES),
