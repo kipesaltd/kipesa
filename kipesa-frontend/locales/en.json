@@ -1,0 +1,10 @@
+{
+  "dashboard": "Dashboard",
+  "welcome": "Welcome, {name}!",
+  "logout": "Logout",
+  "profile": "Profile",
+  "settings": "Settings",
+  "chatbot": "Chatbot",
+  "calculators": "Calculators",
+  "finance": "Finance"
+} 

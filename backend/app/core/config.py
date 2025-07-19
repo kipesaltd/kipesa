@@ -7,13 +7,13 @@ from pydantic import field_validator
 
 class Settings(BaseSettings):
     APP_ENV: str = "development"
-    SECRET_KEY: str
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
-    DATABASE_URL: str
-    ALLOWED_ORIGINS: List[str] = []
+    SUPABASE_URL: str = "https://your-project.supabase.co"
+    SUPABASE_KEY: str = "your-supabase-anon-key"
+    DATABASE_URL: str = "postgresql://user:password@localhost:5432/kipesa"
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
