@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Optional
 
 from app.core.config import get_settings
 from app.db.models import User
@@ -8,6 +9,8 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from loguru import logger
+from fastapi import HTTPException, status, Depends
+from fastapi.security import HTTPBearer
 
 settings = get_settings()
 
@@ -16,6 +19,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGORITHM = settings.ALGORITHM
 SECRET_KEY = settings.SECRET_KEY
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
+security = HTTPBearer()
 
 
 def hash_password(password: str) -> str:
@@ -128,3 +133,15 @@ def change_supabase_password(access_token: str, new_password: str):
 def send_supabase_password_reset(email: str):
     resp = supabase.auth.reset_password_for_email(email)
     return resp
+
+
+async def get_current_user_id(token: str = Depends(security)) -> Optional[int]:
+    """Get current user ID from JWT token."""
+    try:
+        payload = decode_access_token(token.credentials)
+        if payload and payload.get("user_id"):
+            return payload["user_id"]
+        return None
+    except Exception as e:
+        logger.error(f"Error getting current user ID: {e}")
+        return None

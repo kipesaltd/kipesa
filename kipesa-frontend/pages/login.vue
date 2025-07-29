@@ -8,6 +8,16 @@
       <div v-if="formError" class="text-red-500 mt-2">{{ formError }}</div>
       <div v-if="error" class="text-red-500 mt-2">{{ error }}</div>
     </form>
+    
+    <!-- Register link -->
+    <div class="mt-6 text-center">
+      <p class="text-gray-600 dark:text-gray-400">
+        Don't have an account? 
+        <NuxtLink to="/register" class="text-kipesa-green hover:underline font-medium">
+          Register here
+        </NuxtLink>
+      </p>
+    </div>
   </div>
 </template>
 
