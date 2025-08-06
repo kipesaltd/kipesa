@@ -49,9 +49,9 @@ This directory contains the FastAPI backend for the Kipesa finance platform.
    - Copy `.env.example` to `.env` and fill in:
      - `OPENAI_API_KEY` (your OpenAI API key from https://platform.openai.com/api-keys)
      - `SECRET_KEY` (generate a secure random string)
-     - `SUPABASE_URL` (from Supabase project dashboard)
-     - `SUPABASE_KEY` (service_role key from Supabase API settings)
-     - `DATABASE_URL` (use `postgresql+asyncpg://...` for async SQLAlchemy - required for async operations)
+     - `SUPABASE_URL` (from Supabase project dashboard - Settings > API)
+     - `SUPABASE_KEY` (anon/public key from Supabase project dashboard - Settings > API)
+     - `DATABASE_URL` (from Supabase project dashboard - Settings > Database > Connection string)
      - `REDIS_URL` (Redis connection string for caching)
 
 ### 3. Running the Backend
@@ -88,7 +88,21 @@ This directory contains the FastAPI backend for the Kipesa finance platform.
 - **Error handling:** Centralized, structured JSON errors, logging with Loguru
 - **Localization:** Bilingual support (English/Swahili) and cultural adaptation
 
-### 6. Troubleshooting
+### 6. Getting Supabase Credentials
+
+1. **Create a Supabase project** at https://supabase.com
+2. **Get your project URL and API key:**
+   - Go to your project dashboard
+   - Navigate to Settings > API
+   - Copy the "Project URL" (for `SUPABASE_URL`)
+   - Copy the "anon public" key (for `SUPABASE_KEY`)
+3. **Get your database connection string:**
+   - Go to Settings > Database
+   - Scroll down to "Connection string"
+   - Select "URI" format
+   - Copy the connection string and replace `[YOUR-PASSWORD]` with your database password
+
+### 7. Troubleshooting
 
 - Ensure all required environment variables are set in `.env`
 - Use `postgresql+asyncpg://` for `DATABASE_URL` (not just `postgresql://`) - this is required for async SQLAlchemy operations
