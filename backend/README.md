@@ -51,7 +51,7 @@ This directory contains the FastAPI backend for the Kipesa finance platform.
      - `SECRET_KEY` (generate a secure random string)
      - `SUPABASE_URL` (from Supabase project dashboard)
      - `SUPABASE_KEY` (service_role key from Supabase API settings)
-     - `DATABASE_URL` (use `postgresql+asyncpg://...` for async SQLAlchemy)
+     - `DATABASE_URL` (use `postgresql+asyncpg://...` for async SQLAlchemy - required for async operations)
      - `REDIS_URL` (Redis connection string for caching)
 
 ### 3. Running the Backend
@@ -91,7 +91,7 @@ This directory contains the FastAPI backend for the Kipesa finance platform.
 ### 6. Troubleshooting
 
 - Ensure all required environment variables are set in `.env`
-- Use `postgresql+asyncpg://` for `DATABASE_URL` (not just `postgresql://`)
+- Use `postgresql+asyncpg://` for `DATABASE_URL` (not just `postgresql://`) - this is required for async SQLAlchemy operations
 - Install all dependencies listed in `requirements.txt`
 - For Pydantic V2 warnings, consider migrating to `@field_validator` and `ConfigDict` in the future
 
