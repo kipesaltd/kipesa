@@ -47,10 +47,12 @@ This directory contains the FastAPI backend for the Kipesa finance platform.
    ```
 3. **Set up environment variables:**
    - Copy `.env.example` to `.env` and fill in:
+     - `OPENAI_API_KEY` (your OpenAI API key from https://platform.openai.com/api-keys)
      - `SECRET_KEY` (generate a secure random string)
      - `SUPABASE_URL` (from Supabase project dashboard)
      - `SUPABASE_KEY` (service_role key from Supabase API settings)
      - `DATABASE_URL` (use `postgresql+asyncpg://...` for async SQLAlchemy)
+     - `REDIS_URL` (Redis connection string for caching)
 
 ### 3. Running the Backend
 
