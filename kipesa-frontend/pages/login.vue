@@ -61,8 +61,8 @@ const onLogin = async () => {
   console.log('Attempting login...')
   try {
     await auth.login(emailValue, passwordValue)
-    if (!auth.error && auth.token && auth.user) {
-      router.push('/dashboard')
+  if (!auth.error && auth.token && auth.user) {
+    router.push('/dashboard')
     }
   } catch (error) {
     console.error('Login error:', error)

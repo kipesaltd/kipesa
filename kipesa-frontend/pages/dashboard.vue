@@ -6,11 +6,11 @@
       <NuxtLink to="/finance" class="bg-white dark:bg-gray-800 rounded shadow p-4 hover:shadow-lg transition-shadow cursor-pointer">
         <div class="flex justify-between items-start">
           <div>
-            <div class="font-semibold">Income</div>
+        <div class="font-semibold">Income</div>
             <div class="text-2xl text-kipesa-green">TSh {{ totalIncome.toLocaleString() }}</div>
           </div>
           <div class="text-sm text-gray-500">→</div>
-        </div>
+      </div>
       </NuxtLink>
       <div class="bg-white dark:bg-gray-800 rounded shadow p-4">
         <div class="font-semibold">Expenses</div>
@@ -28,7 +28,7 @@
       </div>
     </section>
   </div>
-</template>
+</template> 
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'

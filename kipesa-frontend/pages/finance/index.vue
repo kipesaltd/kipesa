@@ -35,7 +35,7 @@
         </div>
         <KButton type="submit" :disabled="loading">
           {{ loading ? 'Adding...' : 'Add Income Source' }}
-        </KButton>
+      </KButton>
       </form>
     </div>
 
@@ -68,8 +68,8 @@
               {{ new Date(income.created_at).toLocaleDateString() }}
             </div>
           </div>
-        </li>
-      </ul>
+      </li>
+    </ul>
       
       <!-- Total Income Summary -->
       <div v-if="incomeSources.length > 0" class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">

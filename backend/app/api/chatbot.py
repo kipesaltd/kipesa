@@ -1,8 +1,11 @@
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
+import json
 
 from app.db.session import get_db
 from app.services.auth import get_current_user_id
@@ -67,6 +70,52 @@ async def send_message(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process message: {str(e)}"
         )
+
+
+@router.post("/chat/stream", tags=["chatbot"])
+async def send_message_stream(
+    chat_request: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: Optional[int] = None
+):
+    """
+    Send a message to the chatbot and get a streaming response.
+    
+    - **message**: The user's message
+    - **conversation_id**: Optional conversation ID (creates new if not provided)
+    - **language**: Language preference (en/sw)
+    - **user_id**: Optional user ID for personalization
+    - **context**: Optional context data
+    """
+    async def generate_stream():
+        try:
+            # Process message and get response
+            response = await chatbot_service.process_message(
+                db, chat_request, user_id
+            )
+            
+            # Stream the response word by word
+            words = response.message.split()
+            for i, word in enumerate(words):
+                yield f"data: {json.dumps({'word': word, 'index': i, 'total': len(words)})}\n\n"
+                await asyncio.sleep(0.1)  # Small delay for streaming effect
+            
+            # Send completion signal
+            yield f"data: {json.dumps({'status': 'complete', 'response': response.dict()})}\n\n"
+            
+        except Exception as e:
+            error_data = {"error": str(e), "status": "error"}
+            yield f"data: {json.dumps(error_data)}\n\n"
+    
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream"
+        }
+    )
 
 
 @router.get("/conversation/{conversation_id}", response_model=ConversationHistory, tags=["chatbot"])

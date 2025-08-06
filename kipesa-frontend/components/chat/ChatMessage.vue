@@ -18,7 +18,7 @@
     <!-- Assistant Message -->
     <div v-else-if="message.role === 'assistant'" class="flex flex-col items-start max-w-[80%]">
       <div class="bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md px-4 py-2 shadow-sm">
-        <p class="text-sm whitespace-pre-wrap">{{ message.content }}</p>
+        <div class="text-sm whitespace-pre-wrap" v-html="formatAssistantMessage(message.content)"></div>
         
         <!-- Message Metadata -->
         <div v-if="message.metadata" class="mt-2 pt-2 border-t border-gray-200">
@@ -98,6 +98,41 @@ const getConfidenceColor = (confidence: number) => {
   if (confidence >= 0.8) return 'bg-green-500'
   if (confidence >= 0.6) return 'bg-yellow-500'
   return 'bg-red-500'
+}
+
+const formatAssistantMessage = (content: string) => {
+  return content
+    // Replace markdown headers with HTML
+    .replace(/^### (.*$)/gim, '<h3 class="font-semibold text-lg mb-2 text-gray-800">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 class="font-bold text-xl mb-3 text-gray-900">$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1 class="font-bold text-2xl mb-4 text-gray-900">$1</h1>')
+    // Replace bold markdown with HTML
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+    // Replace italic markdown with HTML
+    .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+    // Replace code blocks
+    .replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-800 text-green-400 p-3 rounded-md text-xs overflow-x-auto my-2"><code>$1</code></pre>')
+    // Replace inline code
+    .replace(/`([^`]+)`/g, '<code class="bg-gray-200 text-gray-800 px-1 py-0.5 rounded text-xs">$1</code>')
+    // Handle bullet lists more robustly
+    .replace(/^[\s]*\- (.*$)/gim, '<li class="ml-4 mb-1">$1</li>')
+    // Handle numbered lists
+    .replace(/^[\s]*\d+\. (.*$)/gim, '<li class="ml-4 mb-1">$1</li>')
+    // Wrap consecutive list items in ul tags
+    .replace(/(<li.*<\/li>)+/g, (match) => `<ul class="list-disc space-y-1 my-2">${match}</ul>`)
+    // Replace line breaks with proper spacing
+    .replace(/\n\n/g, '</p><p class="my-2">')
+    .replace(/\n/g, '<br>')
+    // Wrap in paragraph tags for non-list content
+    .replace(/^([^<].*)$/gm, '<p class="mb-2">$1</p>')
+    // Clean up empty paragraphs
+    .replace(/<p class="mb-2"><\/p>/g, '')
+    // Clean up consecutive p tags
+    .replace(/<\/p><p class="mb-2">/g, '</p><p class="mb-2">')
+    // Remove extra paragraph tags around headers and lists
+    .replace(/<p class="mb-2">(<h[1-6].*<\/h[1-6]>)<\/p>/g, '$1')
+    .replace(/<p class="mb-2">(<ul.*<\/ul>)<\/p>/g, '$1')
+    .replace(/<p class="mb-2">(<pre.*<\/pre>)<\/p>/g, '$1')
 }
 
 const submitFeedback = (rating: number, helpful: boolean) => {

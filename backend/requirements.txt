@@ -23,4 +23,9 @@ starlette
 openai
 redis
 aiofiles
-python-multipart 
+python-multipart
+redis[hiredis]
+sentence-transformers
+scikit-learn
+numpy
+aiohttp 

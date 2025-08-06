@@ -61,7 +61,7 @@ export const useAuthStore = defineStore('auth', {
         const storedToken = localStorage.getItem('kipesa_token')
         if (storedToken) {
           this.token = storedToken
-          this.fetchProfile()
+        this.fetchProfile()
         }
       }
     }

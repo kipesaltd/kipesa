@@ -12,6 +12,10 @@ import type {
 } from '~/types/chatbot'
 import { Language, MessageRole } from '~/types/chatbot'
 
+// Request throttling
+let lastRequestTime = 0
+const MIN_REQUEST_INTERVAL = 1000 // 1 second minimum between requests
+
 export const useChatbotStore = defineStore('chatbot', {
   state: (): ChatState => ({
     conversation_id: undefined,
@@ -32,6 +36,13 @@ export const useChatbotStore = defineStore('chatbot', {
 
   actions: {
     async startConversation(initialMessage: string, language: Language = Language.ENGLISH) {
+      // Throttle requests
+      const now = Date.now()
+      if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+        throw new Error('Please wait a moment before sending another message')
+      }
+      lastRequestTime = now
+      
       this.loading = true
       this.error = null
       
@@ -63,6 +74,13 @@ export const useChatbotStore = defineStore('chatbot', {
 
     async sendMessage(message: string) {
       if (!message.trim()) return
+      
+      // Throttle requests
+      const now = Date.now()
+      if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+        throw new Error('Please wait a moment before sending another message')
+      }
+      lastRequestTime = now
       
       this.loading = true
       this.error = null

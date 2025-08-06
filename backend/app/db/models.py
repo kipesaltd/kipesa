@@ -13,15 +13,29 @@ settings = get_settings()
 
 DATABASE_URL = settings.DATABASE_URL
 
-# Configure engine with valid connection pool settings
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=True,
-    future=True,
-    pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=3600,   # Recycle connections after 1 hour
-    poolclass=NullPool if "supabase" in DATABASE_URL.lower() else None
-)
+# Configure engine with optimized connection pool settings
+if "supabase" in DATABASE_URL.lower():
+    # Supabase uses NullPool - no pool parameters allowed
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,  # Disable SQL logging in production
+        future=True,
+        pool_pre_ping=True,  # Verify connections before use
+        pool_recycle=3600,   # Recycle connections after 1 hour
+        poolclass=NullPool
+    )
+else:
+    # Regular database with connection pooling
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,  # Disable SQL logging in production
+        future=True,
+        pool_pre_ping=True,  # Verify connections before use
+        pool_recycle=3600,   # Recycle connections after 1 hour
+        pool_size=20,         # Maximum number of connections in pool
+        max_overflow=30,      # Additional connections beyond pool_size
+        pool_timeout=30       # Timeout for getting connection from pool
+    )
 
 # Configure session with proper settings
 AsyncSessionLocal = async_sessionmaker(

@@ -11,6 +11,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
+from app.core.cache import cache_manager, get_cached_knowledge_base, cache_knowledge_base, get_cached_conversation_history, cache_conversation_history, get_cached_user_profile, cache_user_profile
 from app.db.models import Conversation, ChatMessage, ChatbotAnalytics, KnowledgeBase, User
 from app.schemas.chatbot import (
     ChatRequest, ChatResponse, ConversationCreate, ConversationResponse,
@@ -19,7 +20,7 @@ from app.schemas.chatbot import (
 
 settings = get_settings()
 
-# Configure OpenAI client
+# Configure OpenAI client with timeout
 openai.api_key = settings.OPENAI_API_KEY
 
 
@@ -29,13 +30,130 @@ class ChatbotService:
             Language.ENGLISH: """You are Kipesa, a helpful AI financial assistant for Tanzanian users. 
             You provide personalized financial advice, help with budgeting, explain Tanzanian financial regulations, 
             and assist with financial planning. Be conversational, empathetic, and culturally aware. 
-            Always provide practical, actionable advice. If you're unsure about specific regulations, 
-            recommend consulting official sources like Bank of Tanzania or TRA.""",
+            Always provide practical, actionable advice with real Tanzanian examples and calculations.
+
+            IMPORTANT: Always provide specific, local examples using Tanzanian Shillings (TSh), 
+            Tanzanian banks (CRDB, NMB, NBC, etc.), Tanzanian financial products, and local context.
+
+            EXAMPLES AND SIMULATIONS TO USE:
+
+            BUDGETING EXAMPLES:
+            - Monthly salary: TSh 800,000
+            - Rent in Dar es Salaam: TSh 300,000-500,000
+            - Food expenses: TSh 150,000-200,000
+            - Transport (daladala): TSh 50,000-80,000
+            - Utilities: TSh 30,000-50,000
+            - Savings goal: 20% of income
+
+            SAVINGS EXAMPLES:
+            - Emergency fund: 3-6 months of expenses
+            - Mobile money: M-Pesa, Airtel Money, Tigo Pesa
+            - Bank savings: CRDB, NMB, NBC accounts
+            - Investment options: Treasury bonds, mutual funds
+
+            LOAN EXAMPLES:
+            - CRDB personal loan: 15-18% interest
+            - NMB business loan: 12-16% interest
+            - Microfinance: SELFINA, PRIDE Tanzania
+            - Student loans: HESLB (Higher Education Students' Loans Board)
+
+            TAX EXAMPLES:
+            - PAYE (Pay As You Earn): Progressive rates
+            - VAT: 18% on goods and services
+            - Corporate tax: 30% for companies
+            - Withholding tax: 15% on certain payments
+
+            INVESTMENT EXAMPLES:
+            - Treasury bonds: 10-15% returns
+            - Dar es Salaam Stock Exchange (DSE)
+            - Real estate: Dar es Salaam, Arusha, Mwanza
+            - Unit trusts: NMB, CRDB, Stanbic
+
+            BANKING EXAMPLES:
+            - CRDB Bank: Largest bank in Tanzania
+            - NMB Bank: Government-owned bank
+            - NBC Bank: International presence
+            - Mobile banking: M-Pesa, Airtel Money
+
+            REGULATORY EXAMPLES:
+            - Bank of Tanzania (BoT): Central bank
+            - Tanzania Revenue Authority (TRA): Tax collection
+            - Capital Markets and Securities Authority (CMSA)
+            - Insurance Regulatory Authority (IRA)
+
+            Always include:
+            1. Specific amounts in Tanzanian Shillings
+            2. Real Tanzanian bank names and products
+            3. Local market rates and fees
+            4. Tanzanian regulations and requirements
+            5. Practical steps with local institutions
+            6. Cultural context and local practices
+
+            If you're unsure about specific regulations, recommend consulting official sources like Bank of Tanzania or TRA.""",
             
             Language.SWAHILI: """Wewe ni Kipesa, msaidizi wa AI wa kifedha kwa watumiaji wa Tanzania. 
             Unatoa ushauri wa kifedha wa kibinafsi, kusaidia na bajeti, kuelezea kanuni za kifedha za Tanzania, 
             na kusaidia na mpango wa kifedha. Kuwa mwenye mazungumzo, mwenye huruma, na mwenye ufahamu wa kitamaduni. 
-            Daima toa ushauri wa vitendo, unaoweza kutekelezwa. Ikiwa huna uhakika kuhusu kanuni maalum, 
+            Daima toa ushauri wa vitendo, unaoweza kutekelezwa na mifano halisi ya Tanzania.
+
+            MUHIMU: Daima toa mifano maalum kwa kutumia Shilingi za Tanzania (TSh), 
+            benki za Tanzania (CRDB, NMB, NBC, n.k.), bidhaa za kifedha za Tanzania, na muktadha wa ndani.
+
+            MIFANO NA MIFANISHO YA KUTUMIA:
+
+            MIFANO YA BAJETI:
+            - Mshahara wa kila mwezi: TSh 800,000
+            - Kodi ya nyumba Dar es Salaam: TSh 300,000-500,000
+            - Gharama za chakula: TSh 150,000-200,000
+            - Usafiri (daladala): TSh 50,000-80,000
+            - Huduma za msingi: TSh 30,000-50,000
+            - Lengo la kuweka pesa: 20% ya mapato
+
+            MIFANO YA KUWEKA PESA:
+            - Mfuko wa dharura: Miezi 3-6 ya gharama
+            - Pesa za simu: M-Pesa, Airtel Money, Tigo Pesa
+            - Akaunti za benki: CRDB, NMB, NBC
+            - Chaguo za uwekezaji: Treasury bonds, mutual funds
+
+            MIFANO YA MIKOPO:
+            - Mikopo ya kibinafsi CRDB: 15-18% riba
+            - Mikopo ya biashara NMB: 12-16% riba
+            - Mikopo ndogo: SELFINA, PRIDE Tanzania
+            - Mikopo ya wanafunzi: HESLB
+
+            MIFANO YA KODI:
+            - PAYE: Viwango vya mafanikio
+            - VAT: 18% kwa bidhaa na huduma
+            - Kodi ya kampuni: 30% kwa kampuni
+            - Kodi ya kuhifadhi: 15% kwa malipo fulani
+
+            MIFANO YA UWEKEZAJI:
+            - Treasury bonds: 10-15% faida
+            - Dar es Salaam Stock Exchange (DSE)
+            - Mali isiyohamishika: Dar es Salaam, Arusha, Mwanza
+            - Unit trusts: NMB, CRDB, Stanbic
+
+            MIFANO YA BANKKI:
+            - CRDB Bank: Benki kubwa zaidi Tanzania
+            - NMB Bank: Benki ya serikali
+            - NBC Bank: Uwepo wa kimataifa
+            - Benki ya simu: M-Pesa, Airtel Money
+
+            MIFANO YA KANUNI:
+            - Benki ya Tanzania (BoT): Benki kuu
+            - Tanzania Revenue Authority (TRA): Uchukuaji wa kodi
+            - Capital Markets and Securities Authority (CMSA)
+            - Insurance Regulatory Authority (IRA)
+
+            Daima jumuisha:
+            1. Kiasi maalum kwa Shilingi za Tanzania
+            2. Majina halisi ya benki za Tanzania na bidhaa
+            3. Bei za soko la ndani na ada
+            4. Kanuni za Tanzania na mahitaji
+            5. Hatua za vitendo na taasisi za ndani
+            6. Muktadha wa kitamaduni na mazoea ya ndani
+
+            Ikiwa huna uhakika kuhusu kanuni maalum, 
             pendekeza kushauriana na vyanzo rasmi kama Benki ya Tanzania au TRA."""
         }
         
@@ -244,18 +362,34 @@ class ChatbotService:
                     "content": context_message
                 })
             
-            # Call OpenAI API
+            # Call OpenAI API with timeout and optimization
             client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            response = await client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=openai_messages,
-                max_tokens=500,
-                temperature=0.7,
-                presence_penalty=0.1,
-                frequency_penalty=0.1
-            )
             
-            assistant_message = response.choices[0].message.content
+            # Set timeout for the request
+            timeout = 30  # seconds
+            
+            try:
+                response = await asyncio.wait_for(
+                    client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=openai_messages,
+                        max_tokens=500,
+                        temperature=0.7,
+                        presence_penalty=0.1,
+                        frequency_penalty=0.1,
+                        timeout=timeout
+                    ),
+                    timeout=timeout
+                )
+                
+                assistant_message = response.choices[0].message.content
+                
+            except asyncio.TimeoutError:
+                logger.error("OpenAI API request timed out")
+                assistant_message = "I apologize, but I'm taking longer than expected to respond. Please try again in a moment."
+            except Exception as e:
+                logger.error(f"OpenAI API error: {e}")
+                assistant_message = "I'm experiencing technical difficulties. Please try again later."
             
             # Save assistant message
             assistant_msg = ChatMessage(
@@ -297,13 +431,50 @@ class ChatbotService:
         db: AsyncSession, 
         conversation_id: str
     ) -> List[ChatMessage]:
-        """Get conversation history."""
-        query = select(ChatMessage).where(
-            ChatMessage.conversation_id == conversation_id
-        ).order_by(ChatMessage.timestamp)
-        
-        result = await db.execute(query)
-        return result.scalars().all()
+        """Get conversation history with caching."""
+        try:
+            # Try to get from cache first
+            cached_history = await get_cached_conversation_history(conversation_id)
+            if cached_history:
+                # Convert cached data back to ChatMessage objects
+                messages = []
+                for msg_data in cached_history:
+                    message = ChatMessage(
+                        id=msg_data['id'],
+                        conversation_id=msg_data['conversation_id'],
+                        role=msg_data['role'],
+                        content=msg_data['content'],
+                        timestamp=datetime.fromisoformat(msg_data['timestamp'])
+                    )
+                    messages.append(message)
+                return messages
+            
+            # If not in cache, query database
+            query = select(ChatMessage).where(
+                ChatMessage.conversation_id == conversation_id
+            ).order_by(ChatMessage.timestamp)
+            
+            result = await db.execute(query)
+            messages = result.scalars().all()
+            
+            # Cache the conversation history
+            if messages:
+                history_data = []
+                for msg in messages:
+                    history_data.append({
+                        'id': msg.id,
+                        'conversation_id': msg.conversation_id,
+                        'role': msg.role,
+                        'content': msg.content,
+                        'timestamp': msg.timestamp.isoformat()
+                    })
+                await cache_conversation_history(conversation_id, history_data)
+            
+            return messages
+            
+        except Exception as e:
+            logger.error(f"Error getting conversation history: {e}")
+            return []
 
     async def _get_relevant_knowledge(
         self, 
@@ -311,12 +482,19 @@ class ChatbotService:
         user_message: str, 
         language: Language
     ) -> Optional[str]:
-        """Get relevant knowledge base content."""
+        """Get relevant knowledge base content with caching."""
         try:
-            # Simple keyword matching for now
-            # In production, you'd use semantic search or embeddings
-            keywords = user_message.lower().split()
+            # Try to get from cache first
+            cached_knowledge = await get_cached_knowledge_base(language.value)
+            if cached_knowledge:
+                # Use cached knowledge for keyword matching
+                relevant_content = self._match_keywords_in_cached_knowledge(
+                    user_message, cached_knowledge
+                )
+                if relevant_content:
+                    return relevant_content
             
+            # If not in cache, query database and cache results
             query = select(KnowledgeBase).where(
                 KnowledgeBase.language == language.value,
                 KnowledgeBase.is_active == True
@@ -325,40 +503,82 @@ class ChatbotService:
             result = await db.execute(query)
             knowledge_items = result.scalars().all()
             
-            relevant_content = []
+            # Prepare knowledge for caching
+            knowledge_dict = {}
             for item in knowledge_items:
-                content_lower = item.content.lower()
-                title_lower = item.title.lower()
-                
-                # Check if any keywords match
-                for keyword in keywords:
-                    if keyword in content_lower or keyword in title_lower:
-                        relevant_content.append(f"{item.title}: {item.content}")
-                        break
+                knowledge_dict[item.id] = {
+                    'title': item.title,
+                    'content': item.content,
+                    'category': item.category,
+                    'relevance_score': item.relevance_score
+                }
             
-            return "\n\n".join(relevant_content[:3]) if relevant_content else None
+            # Cache the knowledge base
+            await cache_knowledge_base(language.value, knowledge_dict)
+            
+            # Match keywords in fresh data
+            relevant_content = self._match_keywords_in_cached_knowledge(
+                user_message, knowledge_dict
+            )
+            
+            return relevant_content
             
         except Exception as e:
             logger.error(f"Error getting knowledge: {e}")
             return None
+
+    def _match_keywords_in_cached_knowledge(
+        self, 
+        user_message: str, 
+        knowledge_dict: dict
+    ) -> Optional[str]:
+        """Match keywords in cached knowledge base."""
+        keywords = user_message.lower().split()
+        relevant_content = []
+        
+        for item_id, item_data in knowledge_dict.items():
+            content_lower = item_data['content'].lower()
+            title_lower = item_data['title'].lower()
+            
+            # Check if any keywords match
+            for keyword in keywords:
+                if keyword in content_lower or keyword in title_lower:
+                    relevant_content.append(f"{item_data['title']}: {item_data['content']}")
+                    break
+            
+            # Limit to top 3 most relevant items
+            if len(relevant_content) >= 3:
+                break
+        
+        return "\n\n".join(relevant_content) if relevant_content else None
 
     async def _get_user_profile(
         self, 
         db: AsyncSession, 
         user_id: int
     ) -> Optional[Dict[str, Any]]:
-        """Get user profile for personalization."""
+        """Get user profile for personalization with caching."""
         try:
+            # Try to get from cache first
+            cached_profile = await get_cached_user_profile(user_id)
+            if cached_profile:
+                return cached_profile
+            
+            # If not in cache, query database
             query = select(User).where(User.id == user_id)
             result = await db.execute(query)
             user = result.scalar_one_or_none()
             
             if user:
-                return {
+                profile = {
                     'age_group': user.age_group,
                     'location': user.location,
                     'language': user.language
                 }
+                
+                # Cache the user profile
+                await cache_user_profile(user_id, profile)
+                return profile
             return None
             
         except Exception as e:
