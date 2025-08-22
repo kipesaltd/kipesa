@@ -2,6 +2,7 @@ fastapi[all]
 uvicorn[standard]
 sqlalchemy[asyncio]
 asyncpg
+aiosqlite
 supabase
 python-dotenv
 passlib[bcrypt]

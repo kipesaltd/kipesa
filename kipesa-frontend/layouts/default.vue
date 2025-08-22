@@ -1,12 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <KNavBar />
-    <main class="max-w-4xl mx-auto py-8 px-4">
+    <Navigation />
+    <main class="container mx-auto py-8">
       <slot />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import KNavBar from '~/components/molecules/KNavBar.vue'
+import Navigation from '~/components/molecules/Navigation.vue';
 </script> 

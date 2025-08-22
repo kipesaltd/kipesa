@@ -11,11 +11,27 @@ from sqlalchemy.pool import NullPool
 
 settings = get_settings()
 
+# Get DATABASE_URL with fallback for development
 DATABASE_URL = settings.DATABASE_URL
+
+# If no DATABASE_URL is provided, use a local SQLite database for development
+if not DATABASE_URL or DATABASE_URL == "":
+    DATABASE_URL = "sqlite+aiosqlite:///./kipesa_dev.db"
+    print("⚠️  No DATABASE_URL provided, using local SQLite database for development")
 
 # Configure engine with optimized connection pool settings
 if "supabase" in DATABASE_URL.lower():
     # Supabase uses NullPool - no pool parameters allowed
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,  # Disable SQL logging in production
+        future=True,
+        pool_pre_ping=True,  # Verify connections before use
+        pool_recycle=3600,   # Recycle connections after 1 hour
+        poolclass=NullPool
+    )
+elif "sqlite" in DATABASE_URL.lower():
+    # SQLite configuration for development
     engine = create_async_engine(
         DATABASE_URL,
         echo=False,  # Disable SQL logging in production

@@ -22,21 +22,25 @@ async def get_connection_info() -> dict:
     """Get database connection information for debugging."""
     try:
         async with get_db_session() as session:
-            # Get PostgreSQL version and connection info
-            result = await session.execute(text("SELECT version()"))
-            version = result.scalar()
+            # Get database info - works with both PostgreSQL and SQLite
+            result = await session.execute(text("SELECT 1"))
+            result.scalar()
             
-            # Get current connections
-            result = await session.execute(text("""
-                SELECT count(*) as active_connections 
-                FROM pg_stat_activity 
-                WHERE state = 'active'
-            """))
-            active_connections = result.scalar()
+            # Try to get database type and version
+            try:
+                # For PostgreSQL
+                result = await session.execute(text("SELECT version()"))
+                version = result.scalar()
+                db_type = "PostgreSQL"
+            except:
+                # For SQLite
+                result = await session.execute(text("SELECT sqlite_version()"))
+                version = result.scalar()
+                db_type = "SQLite"
             
             return {
+                "type": db_type,
                 "version": version,
-                "active_connections": active_connections,
                 "status": "healthy"
             }
     except Exception as e:
